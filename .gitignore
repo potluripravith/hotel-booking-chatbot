@@ -1,0 +1,13 @@
+# Secrets and environments
+.env
+venv/
+.venv/
+
+# Python cache
+__pycache__/
+*.pyc
+
+# Editor settings (only if you use these editors)
+.vscode/
+.idea/
+.DS_Store
