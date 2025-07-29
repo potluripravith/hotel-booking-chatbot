@@ -39,3 +39,7 @@ date,room_type,available_rooms,price
 2025-08-10,king,2,2000
 2025-08-10,suite,2,3000
 2025-08-10,luxury,2,5000
+2025-08-11,single,0,1000
+2025-08-11,king,0,2000
+2025-08-11,suite,0,3000
+2025-08-11,luxury,0,5000
