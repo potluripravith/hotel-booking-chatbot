@@ -102,7 +102,7 @@ class TestCheckAvailability(unittest.TestCase):
         dates = normalize_date("August 8-11, 2025", datetime(2025, 7, 29))
         result, msg = check_availability(dates)
         self.assertFalse(result)
-        self.assertIn("No room",msg)
+        self.assertIn("No common room",msg)
     def test_range_dates_no_common_room_type(self):
         dates = normalize_date("August 1-3, 2025", datetime(2025, 7, 29))
         result, msg = check_availability(dates)

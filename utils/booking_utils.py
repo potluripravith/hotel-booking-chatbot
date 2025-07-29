@@ -93,117 +93,125 @@ def normalize_date(input_str: str, base_date: datetime) -> List[str]:
 df = load_room_data()
 df["date"] = pd.to_datetime(df["date"])
 
-def check_availability(
-    dates: List[str],
-    room_type: Optional[str] = None,
-    room_count: Optional[int] = None
-) -> Tuple[bool, str]:
-
-    # Validate date format
+def validate_inputs(dates: List[str], room_type: Optional[str], room_count: Optional[int]) -> Tuple[bool, Optional[str]]:
     try:
         dates = pd.to_datetime(dates)
     except Exception:
         return False, "Invalid date format. Please use YYYY-MM-DD."
 
-    # Validate that dates exist in data
+    # Validate date existence
     existing_dates = set(df["date"])
     for d in dates:
         if d not in existing_dates:
             return False, f"No data available for date: {d.date()}"
 
-    # Validate room count
-    if room_count is not None:
-        if not isinstance(room_count, int) or room_count <= 0:
-            return False, "Room count must be an integer greater than zero."
+    # Validate room type
+    valid_room_types = {"single", "king", "suite", "luxury"}
+    if room_type is not None and room_type.lower() not in valid_room_types:
+        return False, "We have only single, king, suite, and luxury room types."
 
+    # Validate room count
+    if room_count is not None and (not isinstance(room_count, int) or room_count <= 0):
+        return False, "Room count must be an integer greater than zero."
+
+    return True, None
+
+
+def check_single_date(date, filtered_df, room_type, room_count):
+    if room_type is None and room_count is None:
+        available = filtered_df[filtered_df["available_rooms"] > 0]
+        if available.empty:
+            return False, f"No rooms available on {date.date()}"
+        return True, available[["room_type", "available_rooms"]].to_dict("records")
+
+    if room_type and room_count is None:
+        rooms = filtered_df[filtered_df["room_type"].str.lower() == room_type.lower()]
+        if rooms.empty or rooms.iloc[0]["available_rooms"] <= 0:
+            return False, f"{room_type} not available on {date.date()}"
+        return True, int(rooms.iloc[0]["available_rooms"])
+
+    if room_type is None and room_count:
+        valid = filtered_df[filtered_df["available_rooms"] >= room_count]
+        if valid.empty:
+            return False, f"No room type with at least {room_count} rooms on {date.date()}"
+        return True, valid["room_type"].tolist()
+
+    if room_type and room_count:
+        row = filtered_df[
+            (filtered_df["room_type"].str.lower() == room_type.lower()) &
+            (filtered_df["available_rooms"] >= room_count)
+        ]
+        if not row.empty:
+            return True, "Available"
+        else:
+            return False, f"{room_type} not available with {room_count} rooms on {date.date()}"
+
+
+def check_range_dates(dates, filtered_df, room_type, room_count):
+    if room_type is None and room_count is None:
+        grouped = (
+            filtered_df[filtered_df["available_rooms"] > 0]
+            .groupby("room_type")["available_rooms"]
+            .agg(["count", "min"])
+        )
+        valid = grouped[grouped["count"] == len(dates)]
+        if valid.empty:
+            return False, "No common room type available for all selected dates"
+        return True, valid["min"].to_dict()
+
+    if room_type and room_count is None:
+        filtered = filtered_df[
+            (filtered_df["room_type"].str.lower() == room_type.lower()) &
+            (filtered_df["available_rooms"] > 0)
+        ]
+        if filtered["date"].nunique() != len(dates):
+            missing = set(dates) - set(filtered["date"])
+            return False, f"{room_type} not available on {', '.join(str(d.date()) for d in missing)}"
+        return True, int(filtered["available_rooms"].min())
+
+    if room_type is None and room_count:
+        valid_by_date = filtered_df[filtered_df["available_rooms"] >= room_count]
+        group = valid_by_date.groupby("date")
+        if len(group) != len(dates):
+            missing = set(dates) - set(group.groups.keys())
+            return False, f"No room type with at least {room_count} rooms on {', '.join(str(d.date()) for d in missing)}"
+        common = (
+            valid_by_date.groupby("room_type")["available_rooms"]
+            .agg(["count", "min"])
+        )
+        valid = common[common["count"] == len(dates)]
+        if valid.empty:
+            return False, "No common room types found for all dates"
+        return True, valid["min"].to_dict()
+
+    if room_type and room_count:
+        match = filtered_df[
+            (filtered_df["room_type"].str.lower() == room_type.lower()) &
+            (filtered_df["available_rooms"] >= room_count)
+        ]
+        if match["date"].nunique() == len(dates):
+            return True, "Available"
+        else:
+            missing = set(dates) - set(match["date"])
+            return False, f"{room_type} not available with {room_count} rooms on {', '.join(str(d.date()) for d in missing)}"
+
+
+def check_availability(
+    dates: List[str],
+    room_type: Optional[str] = None,
+    room_count: Optional[int] = None
+) -> Tuple[bool, str | dict | list | int]:
+    
+    # Step 1: Validate inputs
+    is_valid, error = validate_inputs(dates, room_type, room_count)
+    if not is_valid:
+        return False, error
+
+    dates = pd.to_datetime(dates)
     filtered_df = df[df["date"].isin(dates)]
 
+    # Step 2: Delegate based on single/multiple date
     if len(dates) == 1:
-        date = dates[0]
-
-        # Case 1a: Only date
-        if room_type is None and room_count is None:
-            available = filtered_df[filtered_df["available_rooms"] > 0]
-            if available.empty:
-                return False, f"No rooms available on {date.date()}"
-            return True, available[["room_type", "available_rooms"]].to_dict("records")
-
-        # Case 1b: date + room_type
-        if room_type and room_count is None:
-            rooms_available = filtered_df[
-                (filtered_df["room_type"].str.lower() == room_type.lower())
-            ]["available_rooms"]
-            if rooms_available.empty or int(rooms_available.iloc[0]) <= 0:
-                return False, f"{room_type} not available on {date.date()}"
-            return True, int(rooms_available.iloc[0])
-
-        # Case 1c: date + room_count
-        if room_type is None and room_count:
-            valid = filtered_df[filtered_df["available_rooms"] >= room_count]
-            if valid.empty:
-                return False, f"No room type with at least {room_count} rooms on {date.date()}"
-            return True, valid["room_type"].tolist()
-
-        # Case 1d: date + room_type + room_count
-        if room_type and room_count:
-            row = filtered_df[
-                (filtered_df["room_type"].str.lower() == room_type.lower()) &
-                (filtered_df["available_rooms"] >= room_count)
-            ]
-            if not row.empty:
-                return True, "Available"
-            else:
-                return False, f"{room_type} not available with {room_count} rooms on {date.date()}"
-
-    # Ranged dates
+        return check_single_date(dates[0], filtered_df, room_type, room_count)
     else:
-        if room_type is None and room_count is None:
-            grouped = (
-                filtered_df[filtered_df["available_rooms"] > 0]
-                .groupby("room_type")["available_rooms"]
-                .agg(["count", "min"])
-            )
-            available_room_types = grouped[grouped["count"] == len(dates)]
-            if available_room_types.empty:
-                for date in dates:
-                    day_rooms = df[df["date"] == date]
-                    if (day_rooms["available_rooms"] > 0).sum() == 0:
-                        return False, f"No rooms available on {date.date()}"
-                return False, "No common room type available for all selected dates"
-            return True, available_room_types["min"].to_dict()
-
-        if room_type and room_count is None:
-            filtered = filtered_df[
-                (filtered_df["room_type"].str.lower() == room_type.lower()) &
-                (filtered_df["available_rooms"] > 0)
-            ]
-            if filtered["date"].nunique() != len(dates):
-                missing_dates = set(dates) - set(filtered["date"])
-                return False, f"{room_type} not available on {', '.join(str(d.date()) for d in missing_dates)}"
-            return True, int(filtered["available_rooms"].min())
-
-        if room_type is None and room_count:
-            valid_by_date = filtered_df[filtered_df["available_rooms"] >= room_count]
-            group = valid_by_date.groupby("date")
-            if len(group) != len(dates):
-                missing_dates = set(dates) - set(group.groups.keys())
-                return False, f"No room type with at least {room_count} rooms on {', '.join(str(d.date()) for d in missing_dates)}"
-            common = (
-                valid_by_date.groupby("room_type")["available_rooms"]
-                .agg(["count", "min"])
-            )
-            valid_room_types = common[common["count"] == len(dates)]
-            if valid_room_types.empty:
-                return False, "No common room types found for all dates"
-            return True, valid_room_types["min"].to_dict()
-
-        if room_type and room_count:
-            match = filtered_df[
-                (filtered_df["room_type"].str.lower() == room_type.lower()) &
-                (filtered_df["available_rooms"] >= room_count)
-            ]
-            if match["date"].nunique() == len(dates):
-                return True, "Available"
-            else:
-                missing_dates = set(dates) - set(match["date"])
-                return False, f"{room_type} not available with {room_count} rooms on {', '.join(str(d.date()) for d in missing_dates)}"
+        return check_range_dates(dates, filtered_df, room_type, room_count)
