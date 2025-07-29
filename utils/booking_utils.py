@@ -1,99 +1,94 @@
 from datetime import datetime, timedelta
 import parsedatetime as pdt
 import pandas as pd
-from typing import List, Dict, Union
+from typing import List, Callable
+import os
 
-def load_room_data(path: str = "knowledge_base/room_availability.csv") -> pd.DataFrame:
+import re
+def load_room_data() -> pd.DataFrame:
     """
     Loads the room availability data from a CSV file
     """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
+    path = os.path.join(base_dir, '..', 'knowledge_base', 'Hotel_availability.csv')
     return pd.read_csv(path)
 
+import parsedatetime as pdt
+from datetime import datetime, timedelta
+from typing import List, Callable
+import re
 
-def normalize_date(date_str: str,base_date: datetime = None) -> List[str]:
-    """
-    Parses natural language date expressions and converts them to 'YYYY-MM-DD' format.
-    
-    Examples:
-        "today" -> "2025-07-28"
-        "next friday" -> "2025-08-01"
-        "tomorrow" -> "2025-07-29"
-        "15th August" -> "2025-08-15"
-    
-    Args:
-        date_str (str): The natural language date string.
-    
-    Returns:
-        str: The normalized date in 'YYYY-MM-DD' format or None if parsing fails.
-    """
-    cal = pdt.Calendar()
-    base = base_date or datetime.now()
-    text =date_str.strip().lower()
-    
+def normalize_date(input_str: str, base_date: datetime) -> List[str]:
+    cal = pdt.Calendar(version=pdt.VERSION_CONTEXT_STYLE)
+    text = input_str.strip().lower()
+
+    def format_range(start: datetime, end: datetime) -> List[str]:
+        return [
+            (start + timedelta(days=i)).strftime("%Y-%m-%d")
+            for i in range((end - start).days + 1)
+        ]
+
+    def get_week_start(offset_weeks: int = 0) -> datetime:
+        """Return the Monday of the current or future week"""
+        monday = base_date - timedelta(days=base_date.weekday())  # this week's Monday
+        return monday + timedelta(weeks=offset_weeks)
+
+    def get_week(offset_weeks: int = 0) -> List[str]:
+        monday = get_week_start(offset_weeks)
+        return format_range(monday, monday + timedelta(days=6))
+
+    def get_weekend(offset_weeks: int = 0) -> List[str]:
+        saturday = get_week_start(offset_weeks) + timedelta(days=5)
+        sunday = saturday + timedelta(days=1)
+        return [saturday.strftime("%Y-%m-%d"), sunday.strftime("%Y-%m-%d")]
+
+    def parse_next_n_days(n: int) -> List[str]:
+        return [(base_date + timedelta(days=i + 1)).strftime("%Y-%m-%d") for i in range(n)]
+
+    def parse_month_day_range(m: re.Match) -> List[str]:
+        start_part, day_end, year = m.groups()
+        month = start_part.split()[0]
+        day_start = start_part.split()[1]
+        start = cal.parseDT(f"{month} {day_start}, {year}", base_date)[0].date()
+        end = cal.parseDT(f"{month} {day_end}, {year}", base_date)[0].date()
+        return format_range(start, end)
+
+    # Literal expressions
+    literals: dict[str, Callable[[], List[str]]] = {
+        "this weekend": lambda: get_weekend(0),
+        "weekend": lambda: get_weekend(0),
+        "next weekend": lambda: get_weekend(1),
+        "this week": lambda: get_week(0),
+        "next week": lambda: get_week(1),
+    }
+
+    if text in literals:
+        return literals[text]()
+
+    # Regex-based rules
+    pattern_handlers: List[tuple[re.Pattern, Callable[[re.Match], List[str]]]] = [
+        (re.compile(r'next (\d+) days?'), lambda m: parse_next_n_days(int(m.group(1)))),
+        (re.compile(r'([a-z]+ \d{1,2})-(\d{1,2}), (\d{4})'), parse_month_day_range),
+    ]
+
+    for pattern, handler in pattern_handlers:
+        match = pattern.match(text)
+        if match:
+            return handler(match)
+
+    # Try range parsing
     try:
-        start_date, end_date = cal.evalRanges(text, base)[0]
-        return [(start_date + timedelta(days=i)).date().isoformat()
-                for i in range((end_date - start_date).days + 1)]
-    except (IndexError, TypeError):
+        range_result = cal.evalRanges(text, base_date)
+        if range_result:
+            start_dt, end_dt = range_result[0]
+            if start_dt and end_dt and start_dt != end_dt:
+                return format_range(start_dt.date(), end_dt.date())
+    except Exception:
         pass
 
+    # Fallback: single date
     try:
-        date_obj, _ = cal.parseDT(text, base)
-        return [date_obj.date().isoformat()]
-    except (ValueError, TypeError):
+        dt, _ = cal.parseDT(text, base_date)
+        return [dt.strftime("%Y-%m-%d")]
+    except Exception:
         return []
-
-
-def check_availability(
-    df: pd.DataFrame,
-    dates: Union[str, List[str]],
-    room_type: str = None,
-    count: int = 1
-) -> Union[bool, Dict[str, Union[str, Dict]]]:
-    """
-    Checks room availability for single or multiple dates.
-
-    Args:
-        df (pd.DataFrame): Room availability DataFrame.
-        dates (str or List[str]): A single date or list of dates in 'YYYY-MM-DD' format.
-        room_type (str, optional): Specific room type to check.
-        count (int, optional): Number of rooms required.
-
-    Returns:
-        dict or bool: Availability status per date and room type.
-    """
-
-    if isinstance(dates, str):
-        dates = [dates]
-
-    results = {}
-
-    for date in dates:
-        day_df = df[df['date'] == date]
-
-        if day_df.empty:
-            results[date] = "No data available"
-            continue
-
-        if room_type:
-            rt_df = day_df[day_df['room_type'].str.lower() == room_type.lower()]
-            if rt_df.empty:
-                results[date] = f"{room_type} not available"
-            else:
-                available_rooms = rt_df.iloc[0]['available_rooms']
-                if available_rooms >= count:
-                    results[date] = f"{available_rooms} {room_type} room(s) available"
-                else:
-                    results[date] = f"Only {available_rooms} {room_type} room(s) available, need {count}"
-        else:
-            availability = {
-                row['room_type']: f"{row['available_rooms']} room(s) available"
-                for _, row in day_df.iterrows()
-                if row['available_rooms'] > 0
-            }
-            if availability:
-                results[date] = availability
-            else:
-                results[date] = "No rooms available"
-
-    return results if len(dates) > 1 or room_type is None else list(results.values())[0]

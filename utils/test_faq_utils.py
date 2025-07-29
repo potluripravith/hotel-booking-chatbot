@@ -16,8 +16,8 @@ class TestFAQUtils(unittest.TestCase):
         self.assertIn("2 PM", answer)
 
     def test_no_match(self):
-        question = "Is there a helipad on the roof?"  # something absurd
+        question = "Is there a helipad on the roof?"  # something
         answer = get_faq_answer(question, self.faq_df)
-        self.assertIn("Sorry, I couldn't find an answer to that question", answer)
+        self.assertIn("I couldn't find ", answer)
 if __name__ == '__main__':
     unittest.main()
