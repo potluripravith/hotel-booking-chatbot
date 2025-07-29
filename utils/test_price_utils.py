@@ -1,0 +1,29 @@
+import unittest
+from price_utils import load_room_data, extract_room_prices, get_price_for_room
+
+class TestPriceUtils(unittest.TestCase):
+
+    def setUp(self):
+        # Load real data from CSV
+        self.df = load_room_data()
+        self.price_map = extract_room_prices(self.df)
+
+    def test_price_extraction(self):
+        # Assuming these are the known fixed prices from your data
+        expected = {
+            'single': 1000,
+            'king': 2000,
+            'suite': 3000,
+            'luxury': 5000
+        }
+        self.assertEqual(self.price_map, expected)
+
+    def test_get_price_valid(self):
+        self.assertEqual(get_price_for_room(self.price_map, 'suite'), 3000)
+        self.assertEqual(get_price_for_room(self.price_map, 'king'), 2000)
+
+    def test_get_price_invalid(self):
+        self.assertIsNone(get_price_for_room(self.price_map, 'presidential'))
+
+if __name__ == '__main__':
+    unittest.main()
