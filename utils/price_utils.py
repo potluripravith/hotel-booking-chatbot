@@ -2,9 +2,6 @@ import os
 import pandas as pd
 from typing import Dict, Optional
 
-
-# ---------- Price Utility Functions ----------
-
 def load_room_data() -> pd.DataFrame:
     """
     Loads the room availability data from a CSV file.
@@ -26,3 +23,17 @@ def get_price_for_room(room_prices: Dict[str, int], room_type: str) -> Optional[
     Get fixed price for a given room type.
     """
     return room_prices.get(room_type)
+def calculate_total_price(room_type: str, nights: int, count: int, price_map: dict) -> int:
+    """Calculate total price for a single booking."""
+    price = get_price_for_room(price_map, room_type)
+    if price is None:
+        return 0
+    return price * nights * count
+
+def calculate_combined_price(bookings: list[tuple[str, int, int]], price_map: dict) -> int:
+    """
+    Calculate total price for multiple bookings.
+    Each booking is a tuple: (room_type, nights, room_count)
+    """
+    return sum(calculate_total_price(room_type, nights, count, price_map)
+               for room_type, nights, count in bookings)
