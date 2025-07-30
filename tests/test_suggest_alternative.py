@@ -1,6 +1,6 @@
 import unittest
 import pandas as pd
-from suggest_alternative import (
+from utils.suggest_alternative import (
     load_room_data,
     get_available_alternatives,
     suggest_cheaper_rooms

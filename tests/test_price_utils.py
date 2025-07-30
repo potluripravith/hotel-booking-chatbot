@@ -1,5 +1,5 @@
 import unittest
-from price_utils import load_room_data, extract_room_prices, get_price_for_room,calculate_total_price,calculate_combined_price
+from utils.price_utils import load_room_data, extract_room_prices, get_price_for_room,calculate_total_price,calculate_combined_price
 
 class TestPriceUtils(unittest.TestCase):
 

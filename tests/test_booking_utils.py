@@ -2,7 +2,7 @@ import unittest
 import pandas as pd
 from datetime import datetime
 
-from booking_utils import check_availability, normalize_date, load_room_data
+from utils.booking_utils import check_availability, normalize_date, load_room_data
 
 
 class TestBookingUtils(unittest.TestCase):

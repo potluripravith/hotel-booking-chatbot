@@ -1,5 +1,5 @@
 import unittest
-from faq_utils import load_faq_data, get_faq_answer
+from utils.faq_utils import load_faq_data, get_faq_answer
 
 class TestFAQUtils(unittest.TestCase):
     def setUp(self):
