@@ -1,30 +1,26 @@
 from state import State
-from llm import call_deepseek
-from utils.price_utils import load_room_data, extract_room_prices, get_price_for_room
-
-# nodes/price_enquiry.py
-from state import State
-from utils.price_utils import load_room_data, extract_room_prices, get_price_for_room
+from utils.price_utils import  get_price_for_room
+from llm import extract_booking_info
 
 def price_enquiry_node(state: State) -> State:
+    print("➡️ Routing to node based on intent: price_enquiry")
     user_input = state.get("user_input", "")
-    room_data = load_room_data()
-    price_map = extract_room_prices(room_data)
+    extracted = extract_booking_info(user_input)
 
-    # Try to detect room type from user input
-    found_room_type = None
-    for r_type in ["single", "king", "suite", "luxury"]:
-        if r_type in user_input.lower():
-            found_room_type = r_type
-            break
+    room_type = extracted.get("room_type")
+    if not room_type:
+        return {**state, "response": "Could you please specify the room type?"}
 
-    if found_room_type:
-        price = get_price_for_room(price_map, found_room_type)
+    try:
+          # This gives Dict[str, int]
+        price = get_price_for_room(room_type)
+
         if price is not None:
-            state["response"] = f"The price for a {found_room_type} room is ₹{price} per night."
+            response = f"{room_type.title()} room costs ₹{price} per night."
         else:
-            state["response"] = f"Sorry, we don't have the room type you specifed in our hotel."
-    else:
-        state["response"] = "Please specify the room type you're interested in (e.g., single, king, suite, luxury)."
+            response = f"Sorry, we don't have a room type '{room_type}'."
+        return {**state, "response": response}
 
-    return state
+    except Exception as e:
+        print(f"[ERROR] price_enquiry_node: {e}")
+        return {**state, "response": "Sorry, something went wrong while checking the price."}

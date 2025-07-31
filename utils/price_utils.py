@@ -10,19 +10,22 @@ def load_room_data() -> pd.DataFrame:
     csv_path = os.path.join(base_dir, '..', 'knowledge_base', 'Hotel_availability.csv')
     return pd.read_csv(csv_path)
 
-def extract_room_prices(df: pd.DataFrame) -> Dict[str, int]:
+def extract_room_prices() -> Dict[str, int]:
     """
     Extracts fixed room prices from the availability dataframe.
     Assumes each room type has the same price across all dates.
     """
+    df = load_room_data()
     room_price_map = df.drop_duplicates(subset=['room_type'])[['room_type', 'price']]
     return dict(zip(room_price_map['room_type'], room_price_map['price']))
 
-def get_price_for_room(room_prices: Dict[str, int], room_type: str) -> Optional[int]:
+def get_price_for_room(room_type: str) -> Optional[int]:
     """
     Get fixed price for a given room type.
     """
+    room_prices = extract_room_prices()
     return room_prices.get(room_type)
+
 def calculate_total_price(room_type: str, nights: int, count: int, price_map: dict) -> int:
     """Calculate total price for a single booking."""
     price = get_price_for_room(price_map, room_type)
