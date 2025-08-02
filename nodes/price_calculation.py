@@ -29,8 +29,5 @@ def price_calculation_node(
     if total_price == 0:
         return f"Sorry, we couldn't calculate the price for the '{room_type}' room.", 0
 
-    response = (
-        f"💰 Total Price: ₹{total_price}\n\n"
-        f"Would you like to proceed with the booking?"
-    )
-    return response, total_price
+
+    return total_price

@@ -7,3 +7,4 @@ class State(TypedDict):
     room_type:Optional[str]
     room_count: Optional[int]
     price: Optional[int]
+    total_price: Optional[int]
