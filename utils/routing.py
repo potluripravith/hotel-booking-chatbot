@@ -11,7 +11,8 @@ def route_from_input(state: State) -> str:
         print("➡️ Routing to node based on intent:", state["intent"])
         return "faq_node"
     elif intent == "price_enquiry":
-        print("➡️ Routing to node based on intent:", state["intent"])
+        # print("➡️ Routing to node based on intent:", state["intent"])
+        # print("✅ Routing based on input:", state.get("user_input"))
         return "price_node"
     else:
         print("➡️ Routing to node based on intent:", state["intent"])   

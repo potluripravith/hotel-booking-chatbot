@@ -8,7 +8,7 @@ from openai import OpenAI
 load_dotenv()
 
 client = OpenAI(
-    api_key=os.getenv("OPENAI_API_KEY"),
+    api_key=os.getenv("OPENAI1_API_KEY"),
     base_url="https://openrouter.ai/api/v1"
 )
 DEFAULT_SYSTEM_PROMPT = "You are a helpful hotel booking assistant."
@@ -51,16 +51,6 @@ def call_deepseek(user_message: str, system_prompt: str = "You are a helpful hot
     return response.choices[0].message.content
 
 
-def extract_booking_info(user_message: str) -> dict:
-    """
-    Uses LLM to extract booking dates, room type, and room count from the user message.
-
-    Args:
-        user_message (str): The message from the user.
-
-    Returns:
-        dict: {"dates": [...], "room_type": ..., "room_count": ...}
-    """
 def extract_booking_info(user_message: str) -> dict:
     """
     Uses LLM to extract booking dates, room type, and room count from the user message.

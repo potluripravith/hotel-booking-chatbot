@@ -1,6 +1,7 @@
 from state import State
 from typing import Dict, Any
-from utils.price_utils import load_room_data, get_available_alternatives, suggest_cheaper_rooms
+from utils.price_utils import load_room_data
+from utils.suggest_alternative import get_available_alternatives,suggest_cheaper_rooms
 
 def suggest_alternative_node(state: State) -> Dict[str, Any]:
     """
