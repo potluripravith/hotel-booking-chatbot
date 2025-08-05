@@ -14,7 +14,7 @@ def check_availability_node(state: State) -> State:
     room_type = state.get("room_type")
     room_count = state.get("room_count")
 
-    available, data = Check.check_availability([date], room_type=room_type, room_count=room_count)
+    available, data = Check.check_availability(date, room_type=room_type, room_count=room_count)
     if available:
         if room_type and room_count is not None:
             state["agent_message"] = "Rooms are available. Proceeding to price calculation."

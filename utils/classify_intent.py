@@ -9,7 +9,7 @@ def classify_intent_node(state:State)->State:
     # user_input = state.get("user_input","")
     # conversation_history :List[str] =state.get("memory")
     # recent_history = "\n".join(conversation_history[-2:]) if conversation_history else ""
-    
+    # print(f"{recent_history}")
     # prompt = f"""Classify the following user input into one of the intents:
     # - booking: if it's about booking a room.
     # - faq: if it's a general question like check-in time, wifi availability, etc.
