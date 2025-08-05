@@ -9,6 +9,7 @@ from nodes.fallback import fallback_node
 from nodes.ask_date import ask_date_node
 from nodes.ask_roomtype import ask_room_type_node
 from nodes.ask_roomcount import ask_room_count_node
+from nodes.ask_room_type_and_count import ask_room_type_and_count_node
 from nodes.check_availability import check_availability_node
 from nodes.booking_confirmed import booking_confirmed_node
 from nodes.confirmation_booking import confirmation_node
@@ -32,8 +33,9 @@ def build_graph():
     workflow.add_node("price_node", price_enquiry_node)
     workflow.add_node("fallback_node", fallback_node)
     workflow.add_node("ask_date",ask_date_node)
-    # workflow.add_node("ask_room_type", ask_room_type_node)
-    # workflow.add_node("ask_room_count", ask_room_count_node)
+    workflow.add_node("ask_room_type", ask_room_type_node)
+    workflow.add_node("ask_room_count", ask_room_count_node)
+    workflow.add_node("ask_room_type_and_count", ask_room_type_and_count_node)
     workflow.add_node("check_availability", check_availability_node)
     # workflow.add_node("suggest_alternative", suggest_alternative_node)
     # workflow.add_node("price_calculation", price_calculation_node)
@@ -60,6 +62,18 @@ def build_graph():
         "ask_date": "ask_date",
         "check_availability": "check_availability"
     })
+    
+    workflow.add_conditional_edges(
+    "check_availability",
+    lambda state: state.next,  
+    {
+        "ask_room_type": "ask_room_type",
+        "ask_room_count": "ask_room_count",
+        "ask_room_type_and_count": "ask_room_type_and_count",
+        "proceed_to_price": "price_calculation",
+        "wait_input": "print_response",  
+    }
+)
     # workflow.add_edge("ask_date", "check_availability")
     # workflow.add_conditional_edges("check_availability", lambda state: (
     #     "ask_room_type" if not state.get("room_type") else 
@@ -89,6 +103,9 @@ def build_graph():
     workflow.add_edge("fallback_node", "print_response")
     workflow.add_edge("ask_date", "print_response")
     workflow.add_edge("check_availability", "print_response")
+    workflow.add_edge("ask_room_type", "print_response")
+    workflow.add_edge("ask_room_count", "print_response")
+    workflow.add_edge("ask_room_type_and_count", "print_response")
     workflow.add_edge("print_response", "wait_input")
     
 

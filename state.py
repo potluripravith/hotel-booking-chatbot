@@ -10,7 +10,7 @@ class State(TypedDict):
     agent_message: Optional[str] 
     price: Optional[int]
     total_price: Optional[int]
-    
+    availability_data:Optional[dict]
     fallback_message: Optional[str]
     memory: Optional[List[str]]
 

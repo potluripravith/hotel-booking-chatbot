@@ -17,6 +17,7 @@ if __name__ == "__main__":
         "fallback_message": None,
         "agent_message": None,
         "thank_you_message": None,
+        "availability_data": None,
         "memory": []  # Required for tracking conversation context
     }
     state: State = app.invoke(state)
