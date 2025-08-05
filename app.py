@@ -8,6 +8,7 @@ if __name__ == "__main__":
     state: State = {
         "user_input": None,
         "intent": None,
+        "has_greeted": False,
         "date": None,
         "room_type": None,
         "room_count": None,
@@ -15,7 +16,8 @@ if __name__ == "__main__":
         "total_price": None,
         "fallback_message": None,
         "agent_message": None,
-        "thank_you": None
+        "thank_you_message": None,
+        "memory": []  # Required for tracking conversation context
     }
     state: State = app.invoke(state)
     print("🤖:", state.get("response", "Welcome!"), flush=True)

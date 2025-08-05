@@ -1,5 +1,5 @@
 import unittest
-from utils.routing import route_from_input
+from routing.routing_to_1st_level_nodes import route_from_input
 
 class TestRouting(unittest.TestCase):
 

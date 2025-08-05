@@ -2,27 +2,27 @@ from state import State
 from typing import Dict, Tuple
 from utils.check_availability import AvailabilityService
 
-def check_availability_node(state: Dict) -> Tuple[str, Dict]:
+def check_availability_node(state: State) -> State:
     """
     Checks if rooms are available for a given date and (optionally) room type and room count.
     Returns:
         - Next step ("ask_date", "ask_room_type", "ask_room_count", "no_availability", "proceed_to_price")
         - Updated state
     """
-    Check = AvailabilityService
+    Check = AvailabilityService()
     date = state.get("date")
     room_type = state.get("room_type")
     room_count = state.get("room_count")
 
-    # Step 1: Ask for missing date
-    if not date:
-        return "ask_date", state
     available, data = Check.check_availability([date], room_type=room_type, room_count=room_count)
     if available:
         if room_type and room_count is not None:
-            return "proceed_to_price",state
+            state["agent_message"] = "Rooms are available. Proceeding to price calculation."
+            return state
         else:
-            return f"{data}"
+            state["agent_message"] = f"{data}"
+            return state
         
     else:
-        return f"{date}"
+        state["agent_message"] = f"{data}"
+        return state

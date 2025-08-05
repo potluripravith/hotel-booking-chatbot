@@ -1,4 +1,4 @@
-from typing import TypedDict,Optional,Literal
+from typing import TypedDict,Optional,Literal,List
 
 class State(TypedDict):
     user_input: Optional[str]
@@ -12,5 +12,6 @@ class State(TypedDict):
     total_price: Optional[int]
     
     fallback_message: Optional[str]
+    memory: Optional[List[str]]
 
     thank_you_message:Optional[str]
