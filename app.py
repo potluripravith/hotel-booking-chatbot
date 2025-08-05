@@ -5,7 +5,19 @@ from state import State
 
 if __name__ == "__main__":
     app = build_graph()
-    state: State = app.invoke({})
+    state: State = {
+        "user_input": None,
+        "intent": None,
+        "date": None,
+        "room_type": None,
+        "room_count": None,
+        "price": None,
+        "total_price": None,
+        "fallback_message": None,
+        "agent_message": None,
+        "thank_you": None
+    }
+    state: State = app.invoke(state)
     print("🤖:", state.get("response", "Welcome!"), flush=True)
 
     while True:

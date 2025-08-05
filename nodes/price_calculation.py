@@ -1,6 +1,6 @@
 
 from typing import List, Dict,Tuple
-from utils.price_utils import calculate_total_price
+from utils.price_utils import PriceCalculator
 
 def price_calculation_node(
     room_type: str,
@@ -20,11 +20,12 @@ def price_calculation_node(
     Returns:
         Tuple[str, int]: Response message and total price.
     """
+    price = PriceCalculator
     nights = len(dates)
     if nights == 0 or room_count <= 0 or not room_type:
         return "Booking details are incomplete. Please provide room type, room count, and valid dates.", 0
 
-    total_price = calculate_total_price(room_type, nights, room_count, price_map)
+    total_price = price.calculate_total_price(room_type, nights, room_count, price_map)
 
     if total_price == 0:
         return f"Sorry, we couldn't calculate the price for the '{room_type}' room.", 0

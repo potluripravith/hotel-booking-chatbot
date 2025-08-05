@@ -1,9 +1,10 @@
 from state import State
-from utils.price_utils import  get_price_for_room
+from utils.price_utils import PriceCalculator
 from llm import extract_booking_info
 
 def price_enquiry_node(state: State) -> State:
     # print("➡️ Routing to node based on intent: price_enquiry")
+    price = PriceCalculator()
     # user_input = state.get("user_input", "")
     # extracted = extract_booking_info(user_input)
     
@@ -16,7 +17,7 @@ def price_enquiry_node(state: State) -> State:
 
 
         # This gives Dict[str, int]
-    price = get_price_for_room(room_type)
+    price = price.get_price_for_room(room_type)
     print(f"price:{price}")
 
     if price is not None:

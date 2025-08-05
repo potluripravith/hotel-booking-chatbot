@@ -1,54 +1,54 @@
-import pandas as pd
-from rapidfuzz import fuzz, process
-import os
 import re
 import string
-import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
-from nltk.data import find
+from rapidfuzz import fuzz, process
+from utils.load_data import DataLoader
 
-def ensure_nltk_resources():
-    """Ensures that necessary NLTK resources ('punkt' and 'stopwords') are available and Downloads them if not already present"""
-    for resource_id, resource_name in [("tokenizers/punkt", "punkt"), ("corpora/stopwords", "stopwords")]:
-        try:
-            find(resource_id)
-        except LookupError:
-            nltk.download(resource_name)
 
-ensure_nltk_resources()
+STOP_WORDS = set(stopwords.words("english"))
 
-STOP_WORDS = set(stopwords.words('english'))
 
-def clean_text(text: str) -> str:
-    """Cleans input text by lowercasing, removing punctuation, tokenizing and filtering out English stopwords."""
-    text = text.lower()
-    text = re.sub(f"[{string.punctuation}]", "", text)
-    tokens = word_tokenize(text)
-    filtered_tokens = [word for word in tokens if word not in STOP_WORDS]
-    return " ".join(filtered_tokens)
+class FAQAnswerService:
+    def __init__(self, scorer=fuzz.token_sort_ratio, threshold: int = 55):
+        """
+        Initializes the FAQAnswerService by loading data and precomputing cleaned questions.
+        """
+        self.scorer = scorer
+        self.threshold = threshold
+        loader = DataLoader()
+        self.faq_df = loader.load_faq_data()  
+        self._validate_columns()
+        self.cleaned_questions = self.faq_df["question"].apply(self.clean_text)
 
-def load_faq_data()-> pd.DataFrame:
-    """Loads FAQ data from a CSV file located in the 'knowledge_base' directory"""
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    path = os.path.join(base_dir, '..', 'knowledge_base', 'Hotel_faqs.csv')
-    return pd.read_csv(path)
+    @staticmethod
+    def clean_text(text: str) -> str:
+        """
+        Cleans input text by lowercasing, removing punctuation, tokenizing,
+        and filtering out stopwords.
+        """
+        text = text.lower()
+        text = re.sub(f"[{string.punctuation}]", "", text)
+        tokens = word_tokenize(text)
+        return " ".join([w for w in tokens if w not in STOP_WORDS])
 
-def get_faq_answer(user_question: str, faq_df: pd.DataFrame) -> str:
-    """Finds the most relevant FAQ answer to the user's question using fuzzy string matching"""
-    if "question" not in faq_df.columns or "answer" not in faq_df.columns:
-        raise ValueError("FAQ CSV must contain 'question' and 'answer' columns.")
-    cleaned_user_question = clean_text(user_question)
+    def _validate_columns(self):
+        """
+        Ensures the required 'question' and 'answer' columns exist.
+        """
+        required_cols = {"question", "answer"}
+        if not required_cols.issubset(self.faq_df.columns):
+            raise ValueError("FAQ data must contain 'question' and 'answer' columns.")
 
-    cleaned_questions = faq_df["question"].apply(clean_text)
-    match = process.extractOne(
-    cleaned_user_question,
-    cleaned_questions,
-    scorer=fuzz.token_sort_ratio
-    )
-    FUZZY_MATCH_THRESHOLD = 55
-    if match and match[1] >= FUZZY_MATCH_THRESHOLD:
-        _, _, index = match
-        return faq_df.loc[index, "answer"]
+    def get_answer(self, user_question: str) -> str:
+        """
+        Returns the most relevant answer for the given user question.
+        """
+        cleaned_input = self.clean_text(user_question)
+        match = process.extractOne(cleaned_input, self.cleaned_questions, scorer=self.scorer)
 
-    return "Sorry, I couldn't find an answer to that question."
+        if match and match[1] >= self.threshold:
+            _, _, index = match
+            return self.faq_df.loc[index, "answer"]
+
+        return "Sorry, I couldn't find an answer to that question."

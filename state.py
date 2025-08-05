@@ -2,7 +2,7 @@ from typing import TypedDict,Optional,Literal
 
 class State(TypedDict):
     user_input: Optional[str]
-    intent:Optional[Literal["booking", "faq", "price_enquiry", "alternative", "unknown"]]
+    intent:Optional[Literal["booking", "faq", "price_enquiry", "alternative", "fallback"]]
     has_greeted: Optional[bool]
     date:Optional[str]
     room_type:Optional[str]
