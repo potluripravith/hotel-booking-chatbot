@@ -4,7 +4,7 @@ from nodes.greet import greet_node
 from nodes.wait_input import wait_input_node
 from nodes.price_enquiry import price_enquiry_node  
 from nodes.faq import faq_node                      
-from nodes.booking import booking_node              
+# from nodes.booking import booking_node              
 from nodes.fallback import fallback_node
 from nodes.ask_date import ask_date_node
 from nodes.ask_roomtype import ask_room_type_node
@@ -13,7 +13,7 @@ from nodes.check_availability import check_availability_node
 from nodes.booking_confirmed import booking_confirmed_node
 from nodes.confirmation_booking import confirmation_node
 from nodes.price_calculation import price_calculation_node
-from nodes.suggest_alternative_node import suggest_alternative_node
+# from nodes.suggest_alternative_node import suggest_alternative_node
 from nodes.thank_you import thank_you_node
 from nodes.agent_node import agent_node           
 from utils.routing import route_from_input

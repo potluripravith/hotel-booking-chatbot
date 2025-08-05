@@ -21,8 +21,8 @@ def price_enquiry_node(state: State) -> State:
     print(f"price:{price}")
 
     if price is not None:
-        state["response"] = f"{room_type.title()} room costs ₹{price} per night."
+        state["agent_message"] = f"{room_type.title()} room costs ₹{price} per night."
         # print(f"{response}")
     else:
-        state["response"] = f"Sorry, we don't have a room type '{room_type}'."
+        state["agent_message"] = f"Sorry, we don't have a room type '{room_type}'."
     return state

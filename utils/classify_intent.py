@@ -20,6 +20,6 @@ def classify_intent_node(state:State)->State:
     # if intent not in INTENTS + ["fallback"]:
     #     intent = "fallback"
         
-    state["intent"] = "fallback"
+    state["intent"] = "price_enquiry"
     return state
 
