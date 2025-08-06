@@ -1,34 +1,29 @@
-
-from typing import List, Dict,Tuple
 from utils.price_utils import PriceCalculator
+from state import State
 
-def price_calculation_node(
-    room_type: str,
-    room_count: int,
-    dates: List[str],
-    price_map: Dict[str, int]
-) -> Tuple[str, int]:
+def price_calculation_node(state:State)->State:
+
     """
     Calculates total booking price for given room type, count, and dates.
     
-    Parameters:
-        room_type (str): The type of room user wants to book.
-        room_count (int): Number of rooms user wants.
-        dates (List[str]): List of booking dates in 'YYYY-MM-DD' format.
-        price_map (Dict[str, int]): Precomputed room prices.
-
-    Returns:
-        Tuple[str, int]: Response message and total price.
     """
-    price = PriceCalculator
+    room_type=state.get("room_type")
+    room_count = state.get("room_count")
+    dates = state.get("dates",[])
+    price = PriceCalculator()
+    if not room_type or not room_count or not dates:
+        state["agent_message"] = "Booking details are incomplete. Please provide room type, room count, and valid dates."
+        return state
     nights = len(dates)
-    if nights == 0 or room_count <= 0 or not room_type:
-        return "Booking details are incomplete. Please provide room type, room count, and valid dates.", 0
+    
 
-    total_price = price.calculate_total_price(room_type, nights, room_count, price_map)
+    total_price = price.calculate_total_price(room_type, nights, room_count)
 
     if total_price == 0:
-        return f"Sorry, we couldn't calculate the price for the '{room_type}' room.", 0
+        state['agent_message'] = f"Sorry, we couldn't calculate the price for the '{room_type}' room."
+        return state
+    state["total_price"] = total_price
+    state["agent_message"] = f"Yes, the {room_type} room is available for {room_count} rooms over {nights} nights. The total price is ₹{total_price}. Shall I proceed to book?"
 
+    return state
 
-    return total_price

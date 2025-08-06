@@ -12,13 +12,11 @@ from nodes.ask_roomcount import ask_room_count_node
 from nodes.ask_room_type_and_count import ask_room_type_and_count_node
 from nodes.check_availability import check_availability_node
 from nodes.booking_confirmed import booking_confirmed_node
-from nodes.confirmation_booking import confirmation_node
 from nodes.price_calculation import price_calculation_node
-# from nodes.suggest_alternative_node import suggest_alternative_node
+# from nodes.suggest_alternative_node import AlternativeSuggestionService
 from nodes.thank_you import thank_you_node
 from nodes.agent_node import agent_node           
 from routing.routing_to_1st_level_nodes import route_from_input
-from handle_conformation import handle_confirmation_with_llm
 from nodes.print_response import print_response
 from routing.routing_to_2ndLevelNodes_of_booking import route_booking_info_node
         
@@ -37,12 +35,12 @@ def build_graph():
     workflow.add_node("ask_room_count", ask_room_count_node)
     workflow.add_node("ask_room_type_and_count", ask_room_type_and_count_node)
     workflow.add_node("check_availability", check_availability_node)
-    # workflow.add_node("suggest_alternative", suggest_alternative_node)
-    # workflow.add_node("price_calculation", price_calculation_node)
-    # workflow.add_node("confirmation_booking", confirmation_node)
-    # workflow.add_node("booking_confirmed", booking_confirmed_node)
-    # workflow.add_node("agent_node", agent_node)
-    # workflow.add_node("thank_you", thank_you_node)
+    # workflow.add_node("suggest_alternative_node", suggest_alternative_node)
+    workflow.add_node("price_calculation", price_calculation_node)
+    workflow.add_node("confirming_booking_node", booking_confirmed_node)
+
+    workflow.add_node("agent_node", agent_node)
+    workflow.add_node("thank_you_node", thank_you_node)
     
     
     
@@ -55,6 +53,9 @@ def build_graph():
         "booking_node": "booking_node",
         "faq_node": "faq_node",
         "price_node": "price_node",
+        "confirming_booking_node":"confirming_booking_node",
+        # "suggest_alternative_node":"suggest_alternative_node",
+        "thank_you_node":"thank_you_node",
         "fallback_node": "fallback_node"
     }
 )
@@ -70,34 +71,13 @@ def build_graph():
         "ask_room_type": "ask_room_type",
         "ask_room_count": "ask_room_count",
         "ask_room_type_and_count": "ask_room_type_and_count",
-        "proceed_to_price": "price_calculation",
-        "wait_input": "print_response",  
+        "proceed_to_price": "price_calculation"
     }
 )
-    # workflow.add_edge("ask_date", "check_availability")
-    # workflow.add_conditional_edges("check_availability", lambda state: (
-    #     "ask_room_type" if not state.get("room_type") else 
-    #     "ask_room_count" if not state.get("room_count") else 
-    #     "price_calculation"
-    # ), {
-    #     "ask_room_type": "ask_room_type",
-    #     "ask_room_count": "ask_room_count",
-    #     "price_calculation": "price_calculation"
-    # })
 
-    # # After asking missing data → recheck availability
-    # workflow.add_edge("ask_room_type", "check_availability")
-    # workflow.add_edge("ask_room_count", "check_availability")
-    
-    # workflow.add_edge("price_calculation", "confirmation_booking")
-    # workflow.add_conditional_edges("confirmation_booking", handle_confirmation_with_llm)
-    # workflow.add_edge("booking_confirmed", "agent_node")
-    # workflow.add_edge("agent_node", "thank_you")
-    # for node in ["booking_node", "faq_node", "price_node","fallback_node"]:
-    #     workflow.add_edge(node, "wait_input")
-    # for node in ["price_node"]:
-    #     workflow.add_edge(node, "wait_input")
-    # workflow.add_edge("price_node", "wait_input")
+
+
+    workflow.add_edge("confirming_booking_node", "agent_node")
     workflow.add_edge("price_node", "print_response")
     workflow.add_edge("faq_node", "print_response")
     workflow.add_edge("fallback_node", "print_response")
@@ -106,11 +86,13 @@ def build_graph():
     workflow.add_edge("ask_room_type", "print_response")
     workflow.add_edge("ask_room_count", "print_response")
     workflow.add_edge("ask_room_type_and_count", "print_response")
+    workflow.add_edge("price_calculation", "print_response")
+    workflow.add_edge("agent_node","print_response")
     workflow.add_edge("print_response", "wait_input")
     
 
 
-    # workflow.set_finish_point("thank_you")
+    workflow.set_finish_point("thank_you_node")
     
 
 
