@@ -13,7 +13,7 @@ from nodes.ask_room_type_and_count import ask_room_type_and_count_node
 from nodes.check_availability import check_availability_node
 from nodes.booking_confirmed import booking_confirmed_node
 from nodes.price_calculation import price_calculation_node
-# from nodes.suggest_alternative_node import AlternativeSuggestionService
+# from nodes.suggest_alternative_node import suggest_alternative_node
 from nodes.thank_you import thank_you_node
 from nodes.agent_node import agent_node           
 from routing.routing_to_1st_level_nodes import route_from_input
